@@ -1,0 +1,6 @@
+{
+  "crons": [
+    { "path": "/api/cron/abandoned-sweep", "schedule": "*/5 * * * *" },
+    { "path": "/api/cron/no-show-sweep", "schedule": "*/30 * * * *" }
+  ]
+}
