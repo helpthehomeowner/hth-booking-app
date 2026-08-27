@@ -78,10 +78,17 @@ Push to GitHub, import into Vercel, paste in the same env vars (Project Settings
 ```html
 <iframe
   src="https://your-app-domain.com/embed/booking?event=tier4-workshop&source=reviewmyhouse-quiz"
-  style="width:100%;max-width:480px;height:640px;border:0"
+  style="display:block;width:100%;max-width:480px;height:700px;border:0;margin:0 auto"
   title="Book a call"
 ></iframe>
 ```
+
+`display:block` + `margin:0 auto` matter: an `<iframe>` is inline by default, so `margin:auto`
+alone won't center it — without `display:block` it just sits left-aligned inside a wider
+container (e.g. a page-builder content box sized bigger than the widget), leaving visible
+empty space beside it. If you're setting the size via a page builder's own box/column instead
+of this `style` attribute, give that box roughly the same ~480×700 dimensions so there's no
+leftover empty space around the widget either.
 
 - `event` — required, matches an `event_types.slug` row.
 - `source` — optional shorthand tag for which page embedded it; used as `utm_source` if no explicit `utm_source` is also present on the iframe URL.

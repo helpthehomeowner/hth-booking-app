@@ -48,7 +48,11 @@ function EventTypeCard({ eventType, origin }: { eventType: EmbedEventType; origi
   const directUrl = `${origin}/book/${encodeURIComponent(eventType.slug)}${
     source ? `?source=${encodeURIComponent(source)}` : ""
   }`;
-  const iframeSnippet = `<iframe\n  src="${embedUrl}"\n  style="width:100%;max-width:480px;height:640px;border:0"\n  title="Book a call"\n></iframe>`;
+  // display:block + margin:0 auto matter: an <iframe> is inline by default,
+  // so margin:auto alone does nothing — without display:block the iframe
+  // just sits left-aligned (or wherever inline flow puts it) inside a wider
+  // container, with all the extra width showing as empty space beside it.
+  const iframeSnippet = `<iframe\n  src="${embedUrl}"\n  style="display:block;width:100%;max-width:480px;height:700px;border:0;margin:0 auto"\n  title="Book a call"\n></iframe>`;
 
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-5">
