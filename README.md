@@ -67,6 +67,7 @@ Then visit:
 - `http://localhost:3000/book/tier4-workshop` — standalone page
 - `http://localhost:3000/embed/booking?event=tier4-workshop&source=reviewmyhouse-quiz` — what an iframe would load
 - `http://localhost:3000/admin/bookings` — admin (Basic Auth prompt)
+- `http://localhost:3000/admin/embed-codes` — generates the iframe snippet / direct link per event type, with a source-label field, so you don't have to hand-build the query string
 
 ## 6. Deploy
 
