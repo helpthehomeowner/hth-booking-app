@@ -11,6 +11,7 @@ interface Slot {
 
 interface EventTypeInfo {
   name: string;
+  headline: string | null;
   durationMin: number;
 }
 
@@ -39,7 +40,9 @@ export default function BookingWidget({ eventTypeSlug }: { eventTypeSlug: string
     // unknown eventType surfaces as a real error when step 1 is submitted.
     fetch(`/api/event-types/${encodeURIComponent(eventTypeSlug)}`)
       .then((res) => (res.ok ? res.json() : Promise.reject()))
-      .then((data) => setEventTypeInfo({ name: data.name, durationMin: data.durationMin }))
+      .then((data) =>
+        setEventTypeInfo({ name: data.name, headline: data.headline, durationMin: data.durationMin })
+      )
       .catch(() => {});
   }, [eventTypeSlug]);
 
@@ -165,7 +168,7 @@ export default function BookingWidget({ eventTypeSlug }: { eventTypeSlug: string
           </span>
         </div>
         <h1 className="text-xl font-semibold text-gray-900">
-          {eventTypeInfo ? eventTypeInfo.name : "Book a call"}
+          {eventTypeInfo ? eventTypeInfo.headline ?? eventTypeInfo.name : "Book a call"}
         </h1>
         <p className="mt-1 text-sm text-gray-500">
           {step === 1

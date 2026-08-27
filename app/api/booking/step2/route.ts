@@ -151,6 +151,6 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({
     bookingId: booking.id,
     scheduledAt: body.slotStartISO,
-    eventTypeName: eventType.name,
+    eventTypeName: eventType.headline ?? eventType.name,
   });
 }

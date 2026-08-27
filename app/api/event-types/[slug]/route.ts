@@ -12,7 +12,7 @@ export async function GET(
 
   const { data: eventType } = await supabase
     .from("event_types")
-    .select("slug, name, duration_min")
+    .select("slug, name, headline, duration_min")
     .eq("slug", slug)
     .eq("active", true)
     .maybeSingle();
@@ -24,6 +24,7 @@ export async function GET(
   return NextResponse.json({
     slug: eventType.slug,
     name: eventType.name,
+    headline: eventType.headline,
     durationMin: eventType.duration_min,
   });
 }
