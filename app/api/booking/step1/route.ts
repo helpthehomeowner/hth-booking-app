@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
 
   const { data: eventType, error: eventTypeError } = await supabase
     .from("event_types")
-    .select("id")
+    .select("id, name")
     .eq("slug", body.eventTypeSlug)
     .eq("active", true)
     .single();
@@ -99,7 +99,7 @@ export async function POST(req: NextRequest) {
         .eq("id", leadId);
     }
 
-    await syncBookingTag(acContactId, "Booking-Started");
+    await syncBookingTag(acContactId, "Booking-Started", eventType.name);
   } catch (err) {
     console.error("ActiveCampaign sync failed on step1", err);
   }

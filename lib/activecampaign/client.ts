@@ -2,7 +2,10 @@
 // needs: find/create a contact by email, and keep exactly one "booking
 // status" tag on a contact at a time.
 
-const STATUS_TAGS = ["Booked-Pending", "Booked-Attended", "Booked-NoShow"] as const;
+// The exclusive status tags are event-type-specific in practice (e.g.
+// "Booked-Pending — Already Listed Workshop"), so exclusivity is matched by
+// prefix rather than an exact set of known tag strings.
+const STATUS_PREFIXES = ["Booked-Pending", "Booked-Attended", "Booked-NoShow"] as const;
 
 function acConfig() {
   const baseUrl = process.env.ACTIVECAMPAIGN_API_URL;
@@ -108,36 +111,38 @@ async function getContactTagLinks(
   return withNames;
 }
 
-async function addTag(contactId: string, tagName: string): Promise<void> {
-  const tagId = await findOrCreateTagId(tagName);
-  const current = await getContactTagLinks(contactId);
-  if (current.some((c) => c.tagId === tagId)) return; // already tagged
-
-  await acFetch(`/contactTags`, {
-    method: "POST",
-    body: JSON.stringify({ contactTag: { contact: contactId, tag: tagId } }),
-  });
-}
-
-async function removeTag(contactId: string, tagName: string): Promise<void> {
-  const current = await getContactTagLinks(contactId);
-  const link = current.find((c) => c.tagName === tagName);
-  if (!link) return;
-
-  await acFetch(`/contactTags/${link.contactTagId}`, { method: "DELETE" });
-}
-
 /**
- * The single place a booking-status tag ever changes on a contact. Removes
- * whichever of the mutually-exclusive status tags (Booked-Pending,
- * Booked-Attended, Booked-NoShow) the contact currently has, then adds
- * newTag — so a contact never carries more than one status tag at once.
- * Also used for the funnel-stage tags (Booking-Started,
- * Booking-Abandoned-Step2), which simply get added on top.
+ * The single place a booking-status tag ever changes on a contact. The tag
+ * always encodes both the status and the event type (e.g.
+ * "Booked-Pending — Already Listed Workshop"), so multiple event types stay
+ * distinguishable in ActiveCampaign. Removes whichever of the
+ * mutually-exclusive status tags (Booked-Pending, Booked-Attended,
+ * Booked-NoShow — for any event type) the contact currently has, then adds
+ * the new one, so a contact never carries more than one status tag at once
+ * even across different event types. Also used for the funnel-stage tags
+ * (Booking-Started, Booking-Abandoned-Step2), which simply get added on top
+ * without removing anything.
  */
-export async function syncBookingTag(contactId: string, newTag: string): Promise<void> {
-  await Promise.all(
-    STATUS_TAGS.filter((t) => t !== newTag).map((t) => removeTag(contactId, t))
+export async function syncBookingTag(
+  contactId: string,
+  statusBase: string,
+  eventTypeName: string
+): Promise<void> {
+  const fullTag = `${statusBase} — ${eventTypeName}`;
+  const tagId = await findOrCreateTagId(fullTag);
+  const current = await getContactTagLinks(contactId);
+
+  const toRemove = current.filter(
+    (c) => c.tagId !== tagId && STATUS_PREFIXES.some((p) => c.tagName.startsWith(p))
   );
-  await addTag(contactId, newTag);
+  await Promise.all(
+    toRemove.map((c) => acFetch(`/contactTags/${c.contactTagId}`, { method: "DELETE" }))
+  );
+
+  if (!current.some((c) => c.tagId === tagId)) {
+    await acFetch(`/contactTags`, {
+      method: "POST",
+      body: JSON.stringify({ contactTag: { contact: contactId, tag: tagId } }),
+    });
+  }
 }

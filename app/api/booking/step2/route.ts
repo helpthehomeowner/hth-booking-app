@@ -143,7 +143,7 @@ export async function POST(req: NextRequest) {
       await getOrCreateAcContact(lead.email, { phone }); // patches phone onto the existing contact
     }
 
-    await syncBookingTag(acContactId, "Booked-Pending");
+    await syncBookingTag(acContactId, "Booked-Pending", eventType.name);
   } catch (err) {
     console.error("ActiveCampaign sync failed on step2", err);
   }

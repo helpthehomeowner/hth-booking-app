@@ -18,11 +18,13 @@ export async function POST(req: NextRequest) {
 
   const { data: bookingsData } = await supabase
     .from("bookings")
-    .select("*")
+    .select("*, event_type:event_types(name)")
     .eq("status", "confirmed")
     .is("outcome_marked_at", null)
     .lt("scheduled_at", cutoff);
-  const bookings = (bookingsData ?? []) as Booking[];
+  const bookings = (bookingsData ?? []) as (Booking & {
+    event_type: { name: string } | { name: string }[] | null;
+  })[];
 
   let processed = 0;
 
@@ -44,12 +46,16 @@ export async function POST(req: NextRequest) {
         .single();
       const lead = leadData as Lead | null;
 
-      if (lead) {
+      const eventTypeName = Array.isArray(booking.event_type)
+        ? booking.event_type[0]?.name
+        : booking.event_type?.name;
+
+      if (lead && eventTypeName) {
         const acContactId = lead.activecampaign_contact_id ?? (await getOrCreateAcContact(lead.email));
         if (!lead.activecampaign_contact_id) {
           await supabase.from("leads").update({ activecampaign_contact_id: acContactId }).eq("id", lead.id);
         }
-        await syncBookingTag(acContactId, "Booked-NoShow");
+        await syncBookingTag(acContactId, "Booked-NoShow", eventTypeName);
       }
     } catch (err) {
       console.error(`ActiveCampaign sync failed on no-show-sweep for booking ${booking.id}`, err);

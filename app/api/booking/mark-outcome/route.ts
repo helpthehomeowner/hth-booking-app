@@ -54,7 +54,13 @@ export async function POST(req: NextRequest) {
     .single();
   const lead = leadData as Lead | null;
 
-  if (lead) {
+  const { data: eventType } = await supabase
+    .from("event_types")
+    .select("name")
+    .eq("id", booking.event_type_id)
+    .single();
+
+  if (lead && eventType) {
     try {
       const acContactId = lead.activecampaign_contact_id ?? (await getOrCreateAcContact(lead.email));
       if (!lead.activecampaign_contact_id) {
@@ -62,7 +68,8 @@ export async function POST(req: NextRequest) {
       }
       await syncBookingTag(
         acContactId,
-        body.outcome === "attended" ? "Booked-Attended" : "Booked-NoShow"
+        body.outcome === "attended" ? "Booked-Attended" : "Booked-NoShow",
+        eventType.name
       );
     } catch (err) {
       console.error("ActiveCampaign sync failed on mark-outcome", err);
