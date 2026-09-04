@@ -32,7 +32,19 @@ async function loadBookings(): Promise<AdminBookingRow[]> {
   }));
 }
 
-export default async function AdminBookingsPage() {
+const ERROR_MESSAGES: Record<string, string> = {
+  unauthorized: "Session expired — please reload the page and log in again.",
+  "invalid-request": "That request was missing required data. Please try again.",
+  "booking-not-found": "That booking no longer exists.",
+  "update-failed": "Failed to update the booking. Please try again.",
+};
+
+export default async function AdminBookingsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
+  const { error } = await searchParams;
   const bookings = await loadBookings();
   const now = Date.now();
 
@@ -47,6 +59,12 @@ export default async function AdminBookingsPage() {
       <p className="mt-1 text-sm text-gray-500">
         Mark calls as attended or no-show once they&apos;ve happened.
       </p>
+
+      {error && (
+        <div className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+          {ERROR_MESSAGES[error] ?? "Something went wrong. Please try again."}
+        </div>
+      )}
 
       <section className="mt-8">
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500">

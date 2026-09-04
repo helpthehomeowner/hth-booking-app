@@ -6,23 +6,31 @@ import { isAdminAuthorized } from "@/lib/admin-auth";
 
 export const dynamic = "force-dynamic";
 
-interface MarkOutcomeBody {
-  bookingId: string;
-  outcome: "attended" | "no_show";
-}
-
+// This is submitted as a plain HTML <form method="POST"> from the admin
+// table (not a fetch() call): browsers only reliably resend cached Basic
+// Auth credentials for real navigations/form submissions, not for
+// background fetch/XHR requests to the same protection space — a plain
+// form avoids that inconsistency entirely. Redirect back to the admin page
+// afterward instead of returning JSON.
 export async function POST(req: NextRequest) {
+  const redirectTo = new URL("/admin/bookings", req.url);
+
   if (!isAdminAuthorized(req)) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    redirectTo.searchParams.set("error", "unauthorized");
+    return NextResponse.redirect(redirectTo, 303);
   }
 
-  const body = (await req.json().catch(() => null)) as MarkOutcomeBody | null;
+  const form = await req.formData();
+  const bookingId = form.get("bookingId");
+  const outcome = form.get("outcome");
 
-  if (!body?.bookingId || (body.outcome !== "attended" && body.outcome !== "no_show")) {
-    return NextResponse.json(
-      { error: "bookingId and outcome ('attended' | 'no_show') are required" },
-      { status: 400 }
-    );
+  if (
+    typeof bookingId !== "string" ||
+    !bookingId ||
+    (outcome !== "attended" && outcome !== "no_show")
+  ) {
+    redirectTo.searchParams.set("error", "invalid-request");
+    return NextResponse.redirect(redirectTo, 303);
   }
 
   const supabase = supabaseAdmin();
@@ -30,21 +38,23 @@ export async function POST(req: NextRequest) {
   const { data: bookingData } = await supabase
     .from("bookings")
     .select("*")
-    .eq("id", body.bookingId)
+    .eq("id", bookingId)
     .single();
   const booking = bookingData as Booking | null;
 
   if (!booking) {
-    return NextResponse.json({ error: "Booking not found" }, { status: 404 });
+    redirectTo.searchParams.set("error", "booking-not-found");
+    return NextResponse.redirect(redirectTo, 303);
   }
 
   const { error: updateError } = await supabase
     .from("bookings")
-    .update({ status: body.outcome, outcome_marked_at: new Date().toISOString() })
+    .update({ status: outcome, outcome_marked_at: new Date().toISOString() })
     .eq("id", booking.id);
 
   if (updateError) {
-    return NextResponse.json({ error: "Failed to update booking" }, { status: 500 });
+    redirectTo.searchParams.set("error", "update-failed");
+    return NextResponse.redirect(redirectTo, 303);
   }
 
   const { data: leadData } = await supabase
@@ -68,7 +78,7 @@ export async function POST(req: NextRequest) {
       }
       await syncBookingTag(
         acContactId,
-        body.outcome === "attended" ? "Booked-Attended" : "Booked-NoShow",
+        outcome === "attended" ? "Booked-Attended" : "Booked-NoShow",
         eventType.name
       );
     } catch (err) {
@@ -76,5 +86,5 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.redirect(redirectTo, 303);
 }

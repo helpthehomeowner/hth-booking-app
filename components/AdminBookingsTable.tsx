@@ -1,7 +1,3 @@
-"use client";
-
-import { useState } from "react";
-import { useRouter } from "next/navigation";
 import type { BookingStatus } from "@/lib/types";
 
 export interface AdminBookingRow {
@@ -30,28 +26,6 @@ export default function AdminBookingsTable({
   bookings: AdminBookingRow[];
   emptyLabel: string;
 }) {
-  const router = useRouter();
-  const [pendingId, setPendingId] = useState<string | null>(null);
-  const [errorId, setErrorId] = useState<string | null>(null);
-
-  async function markOutcome(bookingId: string, outcome: "attended" | "no_show") {
-    setPendingId(bookingId);
-    setErrorId(null);
-    try {
-      const res = await fetch("/api/booking/mark-outcome", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ bookingId, outcome }),
-      });
-      if (!res.ok) throw new Error();
-      router.refresh();
-    } catch {
-      setErrorId(bookingId);
-    } finally {
-      setPendingId(null);
-    }
-  }
-
   if (bookings.length === 0) {
     return <p className="text-sm text-gray-400">{emptyLabel}</p>;
   }
@@ -99,26 +73,29 @@ export default function AdminBookingsTable({
               <td className="px-4 py-3 text-right">
                 {b.status === "confirmed" ? (
                   <div className="flex justify-end gap-2">
-                    <button
-                      onClick={() => markOutcome(b.id, "attended")}
-                      disabled={pendingId === b.id}
-                      className="rounded-md border border-green-300 px-2 py-1 text-xs font-medium text-green-700 hover:bg-green-50 disabled:opacity-50"
-                    >
-                      Mark Attended
-                    </button>
-                    <button
-                      onClick={() => markOutcome(b.id, "no_show")}
-                      disabled={pendingId === b.id}
-                      className="rounded-md border border-red-300 px-2 py-1 text-xs font-medium text-red-700 hover:bg-red-50 disabled:opacity-50"
-                    >
-                      Mark No-Show
-                    </button>
+                    <form action="/api/booking/mark-outcome" method="POST">
+                      <input type="hidden" name="bookingId" value={b.id} />
+                      <input type="hidden" name="outcome" value="attended" />
+                      <button
+                        type="submit"
+                        className="rounded-md border border-green-300 px-2 py-1 text-xs font-medium text-green-700 hover:bg-green-50"
+                      >
+                        Mark Attended
+                      </button>
+                    </form>
+                    <form action="/api/booking/mark-outcome" method="POST">
+                      <input type="hidden" name="bookingId" value={b.id} />
+                      <input type="hidden" name="outcome" value="no_show" />
+                      <button
+                        type="submit"
+                        className="rounded-md border border-red-300 px-2 py-1 text-xs font-medium text-red-700 hover:bg-red-50"
+                      >
+                        Mark No-Show
+                      </button>
+                    </form>
                   </div>
                 ) : (
                   <span className="text-gray-300">—</span>
-                )}
-                {errorId === b.id && (
-                  <div className="mt-1 text-xs text-red-500">Failed, try again</div>
                 )}
               </td>
             </tr>
