@@ -1,3 +1,6 @@
+"use client";
+
+import type { FormEvent } from "react";
 import type { BookingStatus } from "@/lib/types";
 
 export interface AdminBookingRow {
@@ -18,6 +21,12 @@ const STATUS_STYLES: Record<BookingStatus, string> = {
   no_show: "bg-red-100 text-red-700",
   cancelled: "bg-gray-100 text-gray-400",
 };
+
+function confirmDelete(e: FormEvent<HTMLFormElement>, label: string) {
+  if (!window.confirm(`Delete this booking (${label})? This also removes its Google Calendar event, if any. This can't be undone.`)) {
+    e.preventDefault();
+  }
+}
 
 export default function AdminBookingsTable({
   bookings,
@@ -71,32 +80,45 @@ export default function AdminBookingsTable({
               </td>
               <td className="px-4 py-3 text-gray-400">{b.utm_source ?? "—"}</td>
               <td className="px-4 py-3 text-right">
-                {b.status === "confirmed" ? (
-                  <div className="flex justify-end gap-2">
-                    <form action="/api/booking/mark-outcome" method="POST">
-                      <input type="hidden" name="bookingId" value={b.id} />
-                      <input type="hidden" name="outcome" value="attended" />
-                      <button
-                        type="submit"
-                        className="rounded-md border border-green-300 px-2 py-1 text-xs font-medium text-green-700 hover:bg-green-50"
-                      >
-                        Mark Attended
-                      </button>
-                    </form>
-                    <form action="/api/booking/mark-outcome" method="POST">
-                      <input type="hidden" name="bookingId" value={b.id} />
-                      <input type="hidden" name="outcome" value="no_show" />
-                      <button
-                        type="submit"
-                        className="rounded-md border border-red-300 px-2 py-1 text-xs font-medium text-red-700 hover:bg-red-50"
-                      >
-                        Mark No-Show
-                      </button>
-                    </form>
-                  </div>
-                ) : (
-                  <span className="text-gray-300">—</span>
-                )}
+                <div className="flex flex-wrap justify-end gap-2">
+                  {b.status === "confirmed" && (
+                    <>
+                      <form action="/api/booking/mark-outcome" method="POST">
+                        <input type="hidden" name="bookingId" value={b.id} />
+                        <input type="hidden" name="outcome" value="attended" />
+                        <button
+                          type="submit"
+                          className="rounded-md border border-green-300 px-2 py-1 text-xs font-medium text-green-700 hover:bg-green-50"
+                        >
+                          Mark Attended
+                        </button>
+                      </form>
+                      <form action="/api/booking/mark-outcome" method="POST">
+                        <input type="hidden" name="bookingId" value={b.id} />
+                        <input type="hidden" name="outcome" value="no_show" />
+                        <button
+                          type="submit"
+                          className="rounded-md border border-red-300 px-2 py-1 text-xs font-medium text-red-700 hover:bg-red-50"
+                        >
+                          Mark No-Show
+                        </button>
+                      </form>
+                    </>
+                  )}
+                  <form
+                    action="/api/booking/delete"
+                    method="POST"
+                    onSubmit={(e) => confirmDelete(e, b.lead?.email ?? b.id)}
+                  >
+                    <input type="hidden" name="bookingId" value={b.id} />
+                    <button
+                      type="submit"
+                      className="rounded-md border border-gray-300 px-2 py-1 text-xs font-medium text-gray-500 hover:bg-gray-50"
+                    >
+                      Delete
+                    </button>
+                  </form>
+                </div>
               </td>
             </tr>
           ))}

@@ -37,6 +37,9 @@ const ERROR_MESSAGES: Record<string, string> = {
   "invalid-request": "That request was missing required data. Please try again.",
   "booking-not-found": "That booking no longer exists.",
   "update-failed": "Failed to update the booking. Please try again.",
+  "calendar-delete-failed":
+    "Couldn't remove the Google Calendar event, so the booking was left in place rather than deleting it without cleaning that up. Please try again.",
+  "delete-failed": "Failed to delete the booking. Please try again.",
 };
 
 export default async function AdminBookingsPage({

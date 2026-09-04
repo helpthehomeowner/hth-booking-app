@@ -89,3 +89,16 @@ export async function createCalendarEvent(
 
   return res.data.id;
 }
+
+/** Deletes a calendar event. No-op (does not throw) if it's already gone. */
+export async function deleteCalendarEvent(calendarId: string, eventId: string): Promise<void> {
+  const calendar = getCalendarClient(calendarId);
+
+  try {
+    await calendar.events.delete({ calendarId, eventId, sendUpdates: "all" });
+  } catch (err) {
+    const status = (err as { code?: number; response?: { status?: number } })?.response?.status;
+    if (status === 410 || status === 404) return; // already deleted/gone
+    throw err;
+  }
+}
