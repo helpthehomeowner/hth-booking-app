@@ -103,7 +103,7 @@ export async function POST(req: NextRequest) {
     description: [
       eventType.call_purpose,
       eventType.call_purpose ? "" : null,
-      `Lead: ${lead.name ?? "(no name)"} <${lead.email}> ${phone}`,
+      `Seller: ${lead.name ?? "(no name)"} <${lead.email}> ${phone}`,
       booking.source_url ? `Source: ${booking.source_url}` : null,
       booking.utm_source ? `utm_source: ${booking.utm_source}` : null,
       booking.utm_campaign ? `utm_campaign: ${booking.utm_campaign}` : null,

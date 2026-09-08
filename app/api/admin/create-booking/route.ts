@@ -133,7 +133,7 @@ export async function POST(req: NextRequest) {
     description: [
       eventType.call_purpose,
       eventType.call_purpose ? "" : null,
-      `Lead: ${trimmedName} <${trimmedEmail}> ${trimmedPhone}`,
+      `Seller: ${trimmedName} <${trimmedEmail}> ${trimmedPhone}`,
     ]
       .filter((line) => line !== null)
       .join("\n"),
