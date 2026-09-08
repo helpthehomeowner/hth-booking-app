@@ -131,10 +131,12 @@ export async function POST(req: NextRequest) {
     calendarId: host.calendar_id,
     summary: `${eventType.name} — ${trimmedName}`,
     description: [
+      eventType.call_purpose,
+      eventType.call_purpose ? "" : null,
       `Lead: ${trimmedName} <${trimmedEmail}> ${trimmedPhone}`,
-      `Event type: ${eventType.slug}`,
-      "Booked internally via admin.",
-    ].join("\n"),
+    ]
+      .filter((line) => line !== null)
+      .join("\n"),
     startISO: slotStartISO,
     endISO: slotEndISO,
     timezone: host.timezone,

@@ -26,6 +26,7 @@ export interface EventType {
   slug: string;
   name: string;
   headline: string | null;
+  call_purpose: string | null;
   duration_min: number;
   host_id: string;
   buffer_min: number;

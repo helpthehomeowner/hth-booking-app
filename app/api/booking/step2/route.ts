@@ -101,14 +101,15 @@ export async function POST(req: NextRequest) {
     calendarId: host.calendar_id,
     summary: `${eventType.name} — ${lead.name ?? lead.email}`,
     description: [
+      eventType.call_purpose,
+      eventType.call_purpose ? "" : null,
       `Lead: ${lead.name ?? "(no name)"} <${lead.email}> ${phone}`,
-      `Event type: ${eventType.slug}`,
       booking.source_url ? `Source: ${booking.source_url}` : null,
       booking.utm_source ? `utm_source: ${booking.utm_source}` : null,
       booking.utm_campaign ? `utm_campaign: ${booking.utm_campaign}` : null,
       booking.utm_medium ? `utm_medium: ${booking.utm_medium}` : null,
     ]
-      .filter(Boolean)
+      .filter((line) => line !== null)
       .join("\n"),
     startISO: body.slotStartISO,
     endISO: body.slotEndISO,
