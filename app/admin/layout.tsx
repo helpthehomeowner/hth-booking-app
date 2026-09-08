@@ -8,6 +8,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <Link href="/admin/bookings" className="text-gray-700 hover:text-brand">
             Bookings
           </Link>
+          <Link href="/admin/new-booking" className="text-gray-700 hover:text-brand">
+            New Booking
+          </Link>
           <Link href="/admin/embed-codes" className="text-gray-700 hover:text-brand">
             Embed Codes
           </Link>

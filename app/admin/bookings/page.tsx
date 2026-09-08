@@ -45,9 +45,9 @@ const ERROR_MESSAGES: Record<string, string> = {
 export default async function AdminBookingsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; created?: string }>;
 }) {
-  const { error } = await searchParams;
+  const { error, created } = await searchParams;
   const bookings = await loadBookings();
   const now = Date.now();
 
@@ -66,6 +66,12 @@ export default async function AdminBookingsPage({
       {error && (
         <div className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
           {ERROR_MESSAGES[error] ?? "Something went wrong. Please try again."}
+        </div>
+      )}
+
+      {created && (
+        <div className="mt-4 rounded-lg bg-brand-light px-3 py-2 text-sm text-brand">
+          Booking created and added to Rene&apos;s calendar.
         </div>
       )}
 
