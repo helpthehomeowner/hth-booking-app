@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useTracking } from "@/hooks/useTracking";
 
 interface Slot {
@@ -18,13 +18,25 @@ interface EventTypeInfo {
 export default function BookingWidget({ eventTypeSlug }: { eventTypeSlug: string }) {
   const router = useRouter();
   const tracking = useTracking();
+  const searchParams = useSearchParams();
+
+  // A caller that already has this info (e.g. a lead intake form the visitor
+  // just filled out) can pass it via the iframe URL to skip retyping it:
+  // ?name=Jane+Smith&email=jane@example.com&phone=5555551234. When both name
+  // and email are present, step 1 auto-submits on load straight to the time
+  // picker; phone (if present) just prefills that field on step 2.
+  const prefillName = searchParams.get("name") ?? "";
+  const prefillEmail = searchParams.get("email") ?? "";
+  const prefillPhone = searchParams.get("phone") ?? "";
+  const willAutoAdvance = Boolean(prefillName.trim() && prefillEmail.trim());
+  const autoAdvanced = useRef(false);
 
   const [step, setStep] = useState<1 | 2>(1);
   const [eventTypeInfo, setEventTypeInfo] = useState<EventTypeInfo | null>(null);
 
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
+  const [name, setName] = useState(prefillName);
+  const [email, setEmail] = useState(prefillEmail);
+  const [phone, setPhone] = useState(prefillPhone);
 
   const [bookingId, setBookingId] = useState<string | null>(null);
   const [slots, setSlots] = useState<Slot[]>([]);
@@ -72,11 +84,10 @@ export default function BookingWidget({ eventTypeSlug }: { eventTypeSlug: string
     return Array.from(groups.entries());
   }, [slots]);
 
-  async function submitStep1(e: React.FormEvent) {
-    e.preventDefault();
+  async function runStep1(nameVal: string, emailVal: string) {
     setError(null);
 
-    if (!name.trim() || !email.trim()) {
+    if (!nameVal.trim() || !emailVal.trim()) {
       setError("Please enter your name and email.");
       return;
     }
@@ -87,8 +98,8 @@ export default function BookingWidget({ eventTypeSlug }: { eventTypeSlug: string
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: name.trim(),
-          email: email.trim(),
+          name: nameVal.trim(),
+          email: emailVal.trim(),
           eventTypeSlug,
           ...tracking,
         }),
@@ -105,6 +116,20 @@ export default function BookingWidget({ eventTypeSlug }: { eventTypeSlug: string
       setSubmitting(false);
     }
   }
+
+  function submitStep1(e: React.FormEvent) {
+    e.preventDefault();
+    runStep1(name, email);
+  }
+
+  useEffect(() => {
+    if (autoAdvanced.current) return;
+    if (!prefillName.trim() || !prefillEmail.trim()) return;
+    autoAdvanced.current = true;
+    runStep1(prefillName, prefillEmail);
+    // Intentionally run once on mount with the initial prefill values only.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function submitStep2(e: React.FormEvent) {
     e.preventDefault();
@@ -183,7 +208,11 @@ export default function BookingWidget({ eventTypeSlug }: { eventTypeSlug: string
         <div className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>
       )}
 
-      {step === 1 && (
+      {step === 1 && willAutoAdvance && submitting && !error ? (
+        <p className="py-6 text-center text-sm text-gray-500">Setting things up…</p>
+      ) : null}
+
+      {step === 1 && !(willAutoAdvance && submitting && !error) && (
         <form onSubmit={submitStep1} className="space-y-3">
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700">Full name</label>
