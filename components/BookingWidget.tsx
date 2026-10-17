@@ -154,6 +154,10 @@ export default function BookingWidget({ eventTypeSlug }: { eventTypeSlug: string
           phone: phone.trim(),
           slotStartISO: selectedSlot.startISO,
           slotEndISO: selectedSlot.endISO,
+          // Passed through by a referring page (e.g. the Walk-Away quiz) so
+          // the Meta "Schedule" event matches the same person.
+          fbp: searchParams.get("fbp"),
+          fbclid: searchParams.get("fbclid"),
         }),
       });
 

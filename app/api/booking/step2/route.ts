@@ -2,6 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { createCalendarEvent, getFreeBusy } from "@/lib/google/calendar";
 import { getOrCreateAcContact, syncBookingTag } from "@/lib/activecampaign/client";
+import {
+  buildFbc,
+  clientIpFromHeaders,
+  isCapiConfigured,
+  sendCapiEvent,
+} from "@/lib/facebook/capi";
 import type { Booking, EventType, Host, Lead } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -11,6 +17,9 @@ interface Step2Body {
   phone: string;
   slotStartISO: string;
   slotEndISO: string;
+  /** Forwarded from the page that sent the seller here, for Meta matching. */
+  fbp?: string | null;
+  fbclid?: string | null;
 }
 
 export async function POST(req: NextRequest) {
@@ -147,6 +156,30 @@ export async function POST(req: NextRequest) {
     await syncBookingTag(acContactId, "Booked-Pending", eventType.name);
   } catch (err) {
     console.error("ActiveCampaign sync failed on step2", err);
+  }
+
+  // Facebook Conversions API "Schedule" event — best-effort, never blocks the
+  // booking. Fires only when FACEBOOK_PIXEL_ID + FACEBOOK_CAPI_ACCESS_TOKEN
+  // are set. event_id is stable per booking so a retry is de-duped.
+  if (isCapiConfigured()) {
+    try {
+      const [firstName, ...rest] = (lead.name ?? "").split(" ");
+      await sendCapiEvent({
+        eventName: "Schedule",
+        eventId: `${booking.id}:Schedule`,
+        eventSourceUrl: booking.source_url,
+        email: lead.email,
+        phone,
+        firstName: firstName || null,
+        lastName: rest.join(" ") || null,
+        clientIpAddress: clientIpFromHeaders(req.headers),
+        clientUserAgent: req.headers.get("user-agent"),
+        fbc: buildFbc(body.fbclid, new Date(booking.created_at).getTime()),
+        fbp: body.fbp ?? null,
+      });
+    } catch (err) {
+      console.error("Facebook CAPI Schedule event failed", err);
+    }
   }
 
   return NextResponse.json({
