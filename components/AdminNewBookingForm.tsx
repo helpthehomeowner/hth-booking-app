@@ -66,7 +66,7 @@ export default function AdminNewBookingForm({ eventTypes }: { eventTypes: EventT
 
   return (
     <form
-      action="/api/admin/create-booking"
+      action="/admin/actions/create-booking"
       method="POST"
       onSubmit={onSubmit}
       className="mt-6 space-y-5 rounded-xl border border-gray-200 bg-white p-5"

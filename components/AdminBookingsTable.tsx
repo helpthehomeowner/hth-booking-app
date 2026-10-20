@@ -83,7 +83,7 @@ export default function AdminBookingsTable({
                 <div className="flex flex-wrap justify-end gap-2">
                   {b.status === "confirmed" && (
                     <>
-                      <form action="/api/booking/mark-outcome" method="POST">
+                      <form action="/admin/actions/mark-outcome" method="POST">
                         <input type="hidden" name="bookingId" value={b.id} />
                         <input type="hidden" name="outcome" value="attended" />
                         <button
@@ -93,7 +93,7 @@ export default function AdminBookingsTable({
                           Mark Attended
                         </button>
                       </form>
-                      <form action="/api/booking/mark-outcome" method="POST">
+                      <form action="/admin/actions/mark-outcome" method="POST">
                         <input type="hidden" name="bookingId" value={b.id} />
                         <input type="hidden" name="outcome" value="no_show" />
                         <button
@@ -106,7 +106,7 @@ export default function AdminBookingsTable({
                     </>
                   )}
                   <form
-                    action="/api/booking/delete"
+                    action="/admin/actions/delete"
                     method="POST"
                     onSubmit={(e) => confirmDelete(e, b.lead?.email ?? b.id)}
                   >
